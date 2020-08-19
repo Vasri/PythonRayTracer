@@ -43,7 +43,7 @@ class Specular(Material):
         self.fuzz = fuzz if fuzz in range(0,1) else 1.0
 
     def scatter(self, r_in: Ray, hitPoint: Vec3, hitNormal: Vec3, \
-        attenuation: Vec3, scattered: Ray):
+                attenuation: Vec3, scattered: Ray):
         reflected = super().reflect(r_in.direction.unit(), hitNormal)
         scattered.set(Ray(hitPoint, reflected + super().random_in_unit_sphere() * self.fuzz))
         attenuation.set(self.albedo)

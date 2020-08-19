@@ -11,10 +11,10 @@ import numpy as np
 
 MAX_RAY_LENGTH = 1_000_000.0
 RES_WIDTH = 200
-RES_HEIGHT = 100
+RES_HEIGHT = 200
 LERP_SAMPLE_DENSITY = 100
 
-# called to determine color of pixel hit by lerp
+# called to determine color of pixel
 def color(r: Ray, world: Hitable, depth: int) -> Vec3:
     rec = HitRecord(0,Vec3(0,0,0),Vec3(0,0,1))
 
@@ -52,20 +52,44 @@ def lerp(pixels, cam, world):
             ir = min(255,int(255.99*col.x))
             ig = min(255,int(255.99*col.y))
             ib = min(255,int(255.99*col.z))
-            pixels[x,99-y] = (ir,ig,ib)
+            pixels[x,RES_HEIGHT-1-y] = (ir,ig,ib)
+
+def random_scene():
+    hit_list = []
+    hit_list.append(Sphere(Vec3(0,-1000,0), 1000, Lambertian(Vec3(0.5, 0.5, 0.5))))
+    for a in range(-11,12):
+        for b in range(-11,12):
+            choose_mat = random()
+            center = Vec3(a+0.9*random(), 0.2, b+0.9*random())
+            if (center - Vec3(4,0.2,0)).length() > 0.9:
+                if choose_mat < 0.8: #diffuse
+                    hit_list.append(Sphere(center, 0.2, Lambertian(Vec3(random()*random(), random()*random(), random()*random()))))
+                elif choose_mat < 0.95: #metal
+                    hit_list.append(Sphere(center, 0.2, Specular(Vec3(0.5*(1+random()), 0.5*(1+random()), 0.5*(1+random())), 0.5*random())))
+                else:   #glass
+                    hit_list.append(Sphere(center, 0.2, Dielectric(1.5)))
+    
+    hit_list.append(Sphere(Vec3(0,1,0), 1.0, Dielectric(1.5)))
+    hit_list.append(Sphere(Vec3(-4,1,0), 1.0, Lambertian(Vec3(0.4, 0.2, 0.1))))
+    hit_list.append(Sphere(Vec3(4,1,0), 1.0, Specular(Vec3(0.7, 0.6, 0.5), 0.0)))
+
+    return hit_list
 
 if __name__ == '__main__':
-
-    cam = Camera(Vec3(-2,2,1), Vec3(0,0,-1), Vec3(0,1,0), 90, RES_WIDTH/RES_HEIGHT)
-    hit_list = []
-    hit_list.append(Sphere(Vec3(0,0,-1), 0.5, Lambertian(Vec3(0.1, 0.2, 0.5))))
-    hit_list.append(Sphere(Vec3(0,-100.5,-1), 100, Lambertian(Vec3(0.8, 0.8, 0))))
-    hit_list.append(Sphere(Vec3(1,0,-1), 0.5, Specular(Vec3(0.8, 0.6, 0.2))))
-    hit_list.append(Sphere(Vec3(-1,0,-1), 0.5, Dielectric(1.5)))
-    hit_list.append(Sphere(Vec3(-1,0,-1), -0.45, Dielectric(1.5)))
-    world = HitableList(hit_list)
-
     seed()
+    look_from = Vec3(3,3,2)
+    look_to = Vec3(0,0,-1)
+    dist_to_focus = (look_from - look_to).length()
+    aperture = 2.0
+    cam = Camera(look_from, look_to, Vec3(0,1,0), 90, RES_WIDTH/RES_HEIGHT, aperture, dist_to_focus)
+    # hit_list = []
+    # hit_list.append(Sphere(Vec3(0,0,-1), 0.5, Lambertian(Vec3(0.1, 0.2, 0.5))))
+    # hit_list.append(Sphere(Vec3(0,-100.5,-1), 100, Lambertian(Vec3(0.8, 0.8, 0))))
+    # hit_list.append(Sphere(Vec3(1,0,-1), 0.5, Specular(Vec3(0.8, 0.6, 0.2))))
+    # hit_list.append(Sphere(Vec3(-1,0,-1), 0.5, Dielectric(1.5)))
+    # hit_list.append(Sphere(Vec3(-1,0,-1), -0.45, Dielectric(1.5)))
+    hit_list = random_scene()
+    world = HitableList(hit_list)
 
     # S is the screen coordinates (x0, y0, x1, y1)
     # np.linspace(start, stop, num) produces num evenly spaced samples over [start, stop]

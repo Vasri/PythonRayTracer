@@ -2,6 +2,7 @@ from geometryObjects import Ray
 from geometryObjects import Vec3
 from abc import ABC, abstractmethod
 from materials import Material
+from numpy import where
 
 class HitRecord:
     def __init__(self, t: float, p: Vec3, normal: Vec3):
@@ -38,25 +39,41 @@ class Sphere(Hitable):
         b = Vec3.dot(oc, r.direction)
         c = Vec3.dot(oc, oc) - (self.radius)*(self.radius)
         discriminant = b*b - a*c
+
+        h0 = (-b - discriminant**(0.5))/a
+        h1 = (-b + discriminant**(0.5))/a 
+
+        h = where((h0 > 0) & (h0 < h1), h0, h1)
+        pred = (discriminant > 0) & (h > 0)
+
         if discriminant > 0:
-            temp = (-b - discriminant**(0.5))/a
-            if temp < t_max and temp > t_min:
-                rec.t = temp
-                rec.hitPoint.set(r.point_at_param(rec.t))
-                rec.normal.set((rec.hitPoint - self.center) / self.radius)
-                rec.material = self.material
-                return True
-            
-            temp = (-b + discriminant**(0.5))/a 
-            if temp < t_max and temp > t_min:
-                rec.t = temp
-                rec.hitPoint.set(r.point_at_param(rec.t))
-                rec.normal.set((rec.hitPoint - self.center) / self.radius)
-                rec.material = self.material
-                return True
-                
+            rec.t = where(pred, h, t_max)
+            rec.hitPoint.set(r.point_at_param(rec.t))
+            rec.normal.set((rec.hitPoint - self.center)) / self.radius
+            rec.material = self.material
+            return True
         else:
             return False
+
+        # if discriminant > 0:
+        #     temp = (-b - discriminant**(0.5))/a
+        #     if temp < t_max and temp > t_min:
+        #         rec.t = temp
+        #         rec.hitPoint.set(r.point_at_param(rec.t))
+        #         rec.normal.set((rec.hitPoint - self.center) / self.radius)
+        #         rec.material = self.material
+        #         return True
+            
+        #     temp = (-b + discriminant**(0.5))/a 
+        #     if temp < t_max and temp > t_min:
+        #         rec.t = temp
+        #         rec.hitPoint.set(r.point_at_param(rec.t))
+        #         rec.normal.set((rec.hitPoint - self.center) / self.radius)
+        #         rec.material = self.material
+        #         return True
+                
+        # else:
+        #     return False
 
 class HitableList(Hitable):
     def __init__(self, l: [Hitable]):
